@@ -23,37 +23,41 @@ default_text = (
 )
 
 # ユーザー入力欄
-st.write("### 📜 物語を紡ぐ")
+st.write("### 📜 1. 物語のベースを入力")
 theme = st.text_area(
-    label="表示されているサンプルの文章を、あなたの物語に上書きし、「物語を生成」ボタンを押してみてください。",
+    label="表示されているサンプルの文章を書き換えるか、そのままお使いください。",
     value=default_text,
     height=200
+)
+
+# トーンの選択（ここを復活させました！）
+st.write("### 🎨 2. 物語のトーンを選択")
+tone = st.selectbox(
+    "どんな雰囲気の物語にしますか？",
+    ["少年漫画風（熱く、情熱的）", "SF・サイバーパンク風（未来的、メカニカル）", "ファンタジー童話風（幻想的、優しい）", "ハードボイルド風（渋い、男臭い）", "ホラー・サスペンス風（不気味、緊張感）"]
 )
 
 if st.button("物語を生成する"):
     if not theme.strip():
         st.warning("物語の種（文章）を入力してください。")
     else:
-        with st.spinner("Geminiが熱い物語を紡いでいます..."):
+        with st.spinner(f"Geminiが{tone}で物語を紡いでいます..."):
             try:
-                # モデルの設定
                 model = genai.GenerativeModel("gemini-1.5-flash")
                 
-                # AIへの指示（プロンプト）をより堅牢に
+                # プロンプト：選択されたトーンを反映させる
                 prompt = (
-                    f"以下の『ベースとなる話』を元に、神話学者ジョーゼフ・キャンベルの『英雄の旅（ヒーローズ・ジャーニー）』の12のステップを意識した、"
-                    f"熱い少年漫画風の物語を日本語で作成してください。\n\n"
-                    f"ベースとなる話：\n{theme}"
+                    f"以下の『ベースとなる話』を元に、神話学者ジョーゼフ・キャンベルの『英雄の旅（ヒーローズ・ジャーニー）』の構成に沿った物語を日本語で作成してください。\n\n"
+                    f"【物語のトーン】: {tone}\n"
+                    f"【ベースとなる話】:\n{theme}"
                 )
                 
-                # 生成実行
                 response = model.generate_content(prompt)
                 
-                # 結果の表示（安全に中身を確認）
                 if response and response.candidates:
                     generated_text = response.text
                     if generated_text:
-                        st.subheader("📖 生成された物語")
+                        st.subheader(f"📖 生成された物語（{tone}）")
                         st.write(generated_text)
                     else:
                         st.error("AIからの返答が空でした。もう一度試してみてください。")
@@ -61,9 +65,7 @@ if st.button("物語を生成する"):
                     st.error("物語の生成に失敗しました。内容を少し変えて試してみてください。")
                 
             except Exception as e:
-                # エラーの詳細を隠しつつ、ユーザーに案内
                 st.error("申し訳ありません。物語を生成中にエラーが発生しました。")
-                st.info("※短い単語に変えたり、もう一度ボタンを押すと成功することがあります。")
 
 # --- フッター情報：じゅんさんの署名 ---
 st.divider()
