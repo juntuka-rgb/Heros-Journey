@@ -24,18 +24,23 @@ st.title("🧪 英雄の旅メーカー")
 st.caption("あなたの物語を、英雄の旅のフォーマットに変換するアプリです。")
 
 # --- 🔑 認証サイドバー ---
-st.sidebar.write("### 🔑 認証 & 挑戦")
+st.sidebar.write("### 🔑 認証")
 st.sidebar.info("作者：ジュンツカ 氏の挑戦\n\n**2026年4月12日、自転車日本一周の旅へ。**")
-input_password = st.sidebar.text_input("合言葉（じゅんさんの旅のテーマ）を入力", type="password", help="noteに記載された合言葉を入力してください")
+
+# 合言葉の入力欄（ヒントもプレースホルダーも削除し、最小限に）
+input_password = st.sidebar.text_input(
+    "合言葉を入力してください", 
+    value="", 
+    type="password"
+)
 
 if input_password != CORRECT_PASSWORD:
-    st.warning("左側のサイドバーに『合言葉』を入力してください。")
-    st.write("---")
-    st.info("💡 **合言葉のヒント**\n\n作者：じゅんさんの「これから始まる壮大な旅」の名前が合言葉です。\n詳細はnoteの記事を確認してください。")
+    # 余計なヒントは一切出さず、入力が必要なことだけを伝える
+    st.warning("⚠️ 認証が必要です。合言葉を入力してください。")
     st.stop()
 
-# --- 認証後：メインコンテンツ ---
-st.sidebar.success("認証成功！ 旅立ちを応援しています。")
+# --- 認証成功後 ---
+st.sidebar.success("認証成功")
 
 if "story_content" not in st.session_state:
     st.session_state.story_content = ""
