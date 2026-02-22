@@ -8,7 +8,8 @@ st.write("あなたのアイデアを、AIが12ステップの物語と画像プ
 
 # サイドバーでAPIキーを設定（公開時はここを隠す設定も可能）
 with st.sidebar:
-    api_key = st.text_input("Gemini API Keyを入力してください", type="password")
+# StreamlitのSecretsからAPIキーを読み込む
+api_key = st.secrets["GEMINI_API_KEY"]
     st.info("APIキーは [Google AI Studio](https://aistudio.google.com/app/apikey) で取得できます。")
 
 if api_key:
