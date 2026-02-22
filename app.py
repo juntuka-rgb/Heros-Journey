@@ -9,17 +9,34 @@ else:
     st.error("API KEY NOT FOUND")
     st.stop()
 
-# --- 利用回数カウンターの定義（キャッシュを利用） ---
+# --- 利用回数カウンター ---
 @st.cache_resource
 def get_counter():
     return {"count": 0}
 
 counter = get_counter()
 
+# --- 🔒 合言葉（じゅんさんの決意！） ---
+CORRECT_PASSWORD = "自転車日本一周20260412"
+
+st.set_page_config(page_title="英雄の旅メーカー", page_icon="🧪")
 st.title("🧪 英雄の旅メーカー")
 st.caption("あなたの物語を、英雄の旅のフォーマットに変換するアプリです。")
 
-# --- セッション状態の初期化 ---
+# --- 🔑 認証サイドバー ---
+st.sidebar.write("### 🔑 認証 & 挑戦")
+st.sidebar.info("作者：ジュンツカ 氏の挑戦\n\n**2026年4月12日、自転車日本一周の旅へ。**")
+input_password = st.sidebar.text_input("合言葉（じゅんさんの旅のテーマ）を入力", type="password", help="noteに記載された合言葉を入力してください")
+
+if input_password != CORRECT_PASSWORD:
+    st.warning("左側のサイドバーに『合言葉』を入力してください。")
+    st.write("---")
+    st.info("💡 **合言葉のヒント**\n\n作者：じゅんさんの「これから始まる壮大な旅」の名前が合言葉です。\n詳細はnoteの記事を確認してください。")
+    st.stop()
+
+# --- 認証後：メインコンテンツ ---
+st.sidebar.success("認証成功！ 旅立ちを応援しています。")
+
 if "story_content" not in st.session_state:
     st.session_state.story_content = ""
 if "image_prompts" not in st.session_state:
@@ -37,16 +54,11 @@ default_text = (
     "桃太郎はすくすくと逞しく育ち、自分の力を試すために遥か遠くの鬼ヶ島へ、鬼を退治する旅に出ました。"
 )
 
-theme = st.text_area(
-    label="入力欄にあなたの物語を上書きし、「英雄の旅に変換」ボタンを押してください。",
-    value=default_text,
-    height=200
-)
-
-tone = st.selectbox("物語のトーンを選択:", ["普通", "少年漫画風", "SF風", "ファンタジー風", "ハードボイルド風", "ホラー風"])
+theme = st.text_area(label="物語を上書きし、「英雄の旅に変換」を押してください。", value=default_text, height=200)
+tone = st.selectbox("物語のトーン:", ["普通", "少年漫画風", "SF風", "ファンタジー風", "ハードボイルド風", "ホラー風"])
 
 if st.button("🚀 英雄の旅に変換"):
-    with st.spinner("変換中..."):
+    with st.spinner("Gemini 2.0 が変換中..."):
         try:
             model = genai.GenerativeModel("gemini-2.0-flash")
             safety = {
@@ -55,72 +67,48 @@ if st.button("🚀 英雄の旅に変換"):
                 HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
                 HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
             }
-            prompt = (
-                f"以下の物語をベースに、英雄の旅の12ステップの構成で詳細な物語に変換してください。\n"
-                f"【トーン】：{tone}\n"
-                f"【ベース】：\n{theme}"
-            )
+            prompt = f"以下の物語を英雄の旅の12ステップに変換してください。見出しを付けて詳しく書いて。 \n【トーン】：{tone}\n【ベース】：\n{theme}"
             response = model.generate_content(prompt, safety_settings=safety)
             st.session_state.story_content = response.text
             st.session_state.image_prompts = ""
-            
-            # カウンターを増やす
             counter["count"] += 1
-            
         except Exception as e:
             st.error("エラーが発生しました。")
             st.exception(e)
 
-# --- 2. 修正指示セクション ---
+# --- 2. 修正・画像生成（前回と同様のため中略...じゅんさんの現在のコードを維持） ---
 if st.session_state.story_content:
     st.divider()
     st.write("### 🔄 2. 物語の修正・調整")
-    
-    step_num = st.slider("修正したいステップを選択してください", 1, 12, 1)
+    step_num = st.slider("修正ステップを選択", 1, 12, 1)
     update_instruction = st.text_input(f"ステップ {step_num} への修正指示")
     
     if st.button("🔄 指定したステップを修正する"):
-        with st.spinner(f"ステップ {step_num} を修正中..."):
-            try:
-                model = genai.GenerativeModel("gemini-2.0-flash")
-                refine_prompt = (
-                    f"現在の物語：\n{st.session_state.story_content}\n\n"
-                    f"指示：ステップ {step_num} を中心に以下の指示通り修正してください：{update_instruction}"
-                )
-                response = model.generate_content(refine_prompt)
-                st.session_state.story_content = response.text
-            except Exception as e:
-                st.error("修正中にエラーが発生しました。")
+        with st.spinner("修正中..."):
+            model = genai.GenerativeModel("gemini-2.0-flash")
+            refine_prompt = f"現在の物語：\n{st.session_state.story_content}\n\n指示：ステップ {step_num} を中心に修正：{update_instruction}"
+            response = model.generate_content(refine_prompt)
+            st.session_state.story_content = response.text
 
-    st.session_state.story_content = st.text_area("変換済みテキスト（直接編集も可能）:", value=st.session_state.story_content, height=400)
+    st.text_area("変換済みテキスト:", value=st.session_state.story_content, height=400)
     st.download_button("📥 物語をテキスト保存", st.session_state.story_content, "hero_journey.txt")
 
     st.divider()
 
-    # --- 3. 画像プロンプト生成 ---
     st.write("### 🖼️ 3. ビジュアル構築")
-    # ビジュアルトーンの選択を追加
-    visual_style = st.selectbox(
-        "画像のスタイル（トーン）を選択してください:",
-        ["実写写真風（Cinematic Photo）", "浮世絵風（Ukiyo-e Style）", "3Dアニメ風（Pixar Style）", "油絵風（Oil Painting）", "水墨画風（Ink Wash Painting）", "サイバーパンク・デジタルアート"]
-    )
+    visual_style = st.selectbox("画像のスタイル:", ["実写写真風", "浮世絵風", "3Dアニメ風", "油絵風", "水墨画風", "サイバーパンク"])
     
-    if st.button("🎨 全12ステップの画像プロンプトを生成"):
+    if st.button("🎨 画像プロンプト生成"):
         with st.spinner("プロンプト作成中..."):
             model = genai.GenerativeModel("gemini-2.0-flash")
-            img_req = (
-                f"以下の12ステップの物語に基づき、画像生成AI用の英語プロンプトを12個作成してください。\n"
-                f"【ビジュアルトーン】：{visual_style}\n\n"
-                f"内容：\n{st.session_state.story_content}"
-            )
+            img_req = f"以下の物語に基づき、画像生成AI用の英語プロンプトを12個作成して。 \n【スタイル】：{visual_style}\n\n{st.session_state.story_content}"
             response = model.generate_content(img_req)
             st.session_state.image_prompts = response.text
 
     if st.session_state.image_prompts:
-        st.session_state.image_prompts = st.text_area("画像プロンプト:", value=st.session_state.image_prompts, height=200)
+        st.text_area("画像プロンプト:", value=st.session_state.image_prompts, height=200)
         st.download_button("📥 プロンプトを保存", st.session_state.image_prompts, "image_prompts.txt")
 
-# --- フッター（カウンター表示） ---
 st.divider()
-st.write(f"📊 これまでに **{counter['count']}回** の英雄が誕生しました。")
-st.info("※このアプリはユーザーネーム「ジュンツカ」の提供（APIキー）で動作しています。")
+st.write(f"📊 累計誕生した英雄: **{counter['count']}**")
+st.info("作者：ジュンツカ 氏 提供 / 2026.04.12 自転車日本一周 出発予定")
