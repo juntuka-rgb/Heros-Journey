@@ -1,72 +1,55 @@
 import streamlit as st
 import google.generativeai as genai
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
 
-# --- SecretsからAPIキーを読み込む ---
+# APIキー設定
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 else:
-    st.error("エラー: Secretsに GEMINI_API_KEY が設定されていません。")
+    st.error("API KEY NOT FOUND IN SECRETS")
     st.stop()
 
-# --- 画面のデザイン設定 ---
 st.title("🧪 英雄の旅メーカー")
-st.caption("〜 あなただけの『英雄の旅』を生成するAIツール 〜")
 
-# サンプル文章の準備
-default_text = (
-    "むかしむかし、あるところにお祖父さんとお婆さんがいました。\n"
-    "お爺さんは山に芝刈りに、お婆さんは川に洗濯に行きました。\n"
-    "すると川の上流から大きな桃が流れてきました。\n"
-    "お婆さんは桃を引き上げ、家に持って帰りました。\n"
-    "中から生まれた男の子を桃太郎と名づけ、大切に育てました。\n"
-    "桃太郎は逞しく育ち、遥か遠くの鬼ヶ島へ、鬼を退治する旅に出ました。"
-)
-
-# ユーザー入力欄
-st.write("### 📜 1. 物語のベースを入力")
-theme = st.text_area(
-    label="表示されているサンプルの文章を書き換えるか、そのままお使いください。",
-    value=default_text,
-    height=200
-)
-
-# トーンの選択（ここを復活させました！）
-st.write("### 🎨 2. 物語のトーンを選択")
-tone = st.selectbox(
-    "どんな雰囲気の物語にしますか？",
-    ["少年漫画風（熱く、情熱的）", "SF・サイバーパンク風（未来的、メカニカル）", "ファンタジー童話風（幻想的、優しい）", "ハードボイルド風（渋い、男臭い）", "ホラー・サスペンス風（不気味、緊張感）"]
-)
+# 入力部（前回の内容を継承）
+default_text = "（略）" # ここは先ほどの桃太郎の文章を適宜入れてください
+theme = st.text_area("物語のベース", value=default_text, height=200)
+tone = st.selectbox("トーン", ["少年漫画風", "SF風", "ファンタジー風", "ハードボイルド風", "ホラー風"])
 
 if st.button("物語を生成する"):
-    if not theme.strip():
-        st.warning("物語の種（文章）を入力してください。")
-    else:
-        with st.spinner(f"Geminiが{tone}で物語を紡いでいます..."):
-            try:
-                model = genai.GenerativeModel("gemini-1.5-flash")
-                
-                # プロンプト：選択されたトーンを反映させる
-                prompt = (
-                    f"以下の『ベースとなる話』を元に、神話学者ジョーゼフ・キャンベルの『英雄の旅（ヒーローズ・ジャーニー）』の構成に沿った物語を日本語で作成してください。\n\n"
-                    f"【物語のトーン】: {tone}\n"
-                    f"【ベースとなる話】:\n{theme}"
-                )
-                
-                response = model.generate_content(prompt)
-                
-                if response and response.candidates:
-                    generated_text = response.text
-                    if generated_text:
-                        st.subheader(f"📖 生成された物語（{tone}）")
-                        st.write(generated_text)
-                    else:
-                        st.error("AIからの返答が空でした。もう一度試してみてください。")
-                else:
-                    st.error("物語の生成に失敗しました。内容を少し変えて試してみてください。")
-                
-            except Exception as e:
-                st.error("申し訳ありません。物語を生成中にエラーが発生しました。")
+    with st.spinner("Processing..."):
+        try:
+            model = genai.GenerativeModel("gemini-1.5-flash")
+            
+            # 安全設定（最も緩い設定）
+            safety = {
+                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+            }
 
-# --- フッター情報：じゅんさんの署名 ---
+            response = model.generate_content(
+                f"トーン：{tone}\nベース：{theme}\n上記で英雄の旅を書いて。",
+                safety_settings=safety
+            )
+
+            # プロ的デバッグ：レスポンスの中身を確認
+            if response.candidates:
+                # 候補がある場合、テキストへのアクセスを試みる
+                try:
+                    st.write(response.text)
+                except Exception as e:
+                    # テキスト化に失敗（フィルターブロック等）した場合のログ
+                    st.warning("テキスト変換エラー：安全フィルターにより内容が遮断された可能性があります。")
+                    st.write("Debug info (Feedback):", response.prompt_feedback)
+            else:
+                st.error("AIからのレスポンス候補（Candidates）が空です。")
+
+        except Exception as e:
+            # ホストコンピューター時代の腕が鳴る（？）、生の例外表示
+            st.error("Runtime Error Exception")
+            st.exception(e) # これで詳細なスタックトレースが出ます
+
 st.divider()
 st.info("※このアプリはユーザーネーム「ジュンツカ」の提供（APIキー）で動作しています。")
