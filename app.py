@@ -19,10 +19,17 @@ counter = get_counter()
 # --- 🔒 合言葉設定 ---
 CORRECT_PASSWORD = "自転車日本一周20260412"
 
-st.set_page_config(page_title="英雄の旅メーカー", page_icon="🧪")
+# --- 画面設定（URLを貼った時のタイトルなどはここ） ---
+st.set_page_config(
+    page_title="英雄の旅メーカー｜人生を物語に変えるツール",
+    page_icon="🧪",
+    layout="centered",
+    initial_sidebar_state="expanded"
+)
+
+# --- 実際の画面上の表示（これらは消さずに残す！） ---
 st.title("🧪 英雄の旅メーカー")
 st.caption("あなたの物語を、英雄の旅のフォーマットに変換するアプリです。")
-
 # --- 🔑 認証サイドバー ---
 st.sidebar.write("### 🔑 認証")
 
