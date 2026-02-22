@@ -13,7 +13,7 @@ else:
 st.title("🧪 英雄の旅メーカー")
 st.caption("〜 あなただけの『英雄の旅』を生成するAIツール 〜")
 
-# サンプル文章の準備
+# サンプル文章
 default_text = (
     "むかしむかし、あるところにお祖父さんとお婆さんがいました。\n"
     "お爺さんは山に芝刈りに、お婆さんは川に洗濯に行きました。\n"
@@ -23,15 +23,13 @@ default_text = (
     "桃太郎は逞しく育ち、遥か遠くの鬼ヶ島へ、鬼を退治する旅に出ました。"
 )
 
-# ユーザー入力欄
 st.write("### 📜 1. 物語のベースを入力")
 theme = st.text_area(
-    label="表示されているサンプルの文章を、あなたの物語に上書きし、「物語を生成」ボタンを押してみてください。",
+    label="表示されているサンプルの文章を書き換えるか、そのままお使いください。",
     value=default_text,
     height=200
 )
 
-# トーンの選択（「普通」を最初に追加しました）
 st.write("### 🎨 2. 物語のトーンを選択")
 tone = st.selectbox(
     "どんな雰囲気の物語にしますか？",
@@ -40,11 +38,11 @@ tone = st.selectbox(
 
 if st.button("物語を生成する"):
     if not theme.strip():
-        st.warning("物語の種（文章）を入力してください。")
+        st.warning("物語の種を入力してください。")
     else:
-        with st.spinner(f"Geminiが「{tone}」で物語を紡いでいます..."):
+        with st.spinner(f"Gemini 2.0 が物語を紡いでいます..."):
             try:
-                # 安全設定
+                # 安全設定（ブロックなし）
                 safety_settings = {
                     HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
                     HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
@@ -52,10 +50,9 @@ if st.button("物語を生成する"):
                     HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
                 }
                 
-                # モデル名の指定を修正（404エラー対策）
-                model = genai.GenerativeModel("gemini-1.5-flash")
+                # 【モデル名修正】じゅんさんご指摘の通り 2.0-flash を使用
+                model = genai.GenerativeModel("gemini-2.0-flash")
                 
-                # プロンプトの構築
                 prompt = (
                     f"以下の『ベースとなる話』を元に、神話学者ジョーゼフ・キャンベルの『英雄の旅（ヒーローズ・ジャーニー）』の構成に沿った物語を日本語で作成してください。\n\n"
                     f"【物語のトーン】: {tone}\n"
@@ -69,10 +66,9 @@ if st.button("物語を生成する"):
                     st.subheader(f"📖 生成された物語（{tone}）")
                     st.write(response.text)
                 else:
-                    st.error("AIが回答を控えました。内容を変えて試してください。")
+                    st.error("AIが回答を控えました。別の内容で試してください。")
                     
             except Exception as e:
-                # 最終的なエラー表示
                 st.error("物語の生成中にエラーが発生しました。")
                 st.exception(e)
 
