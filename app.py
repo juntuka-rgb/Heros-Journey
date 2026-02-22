@@ -23,14 +23,20 @@ if st.button("物語を生成する"):
             try:
                 model = genai.GenerativeModel("gemini-1.5-flash")
                 prompt = f"「{theme}」をテーマに、神話学者ジョーゼフ・キャンベルの『英雄の旅（ヒーローズ・ジャーニー）』の構成に沿った短編物語を日本語で書いてください。"
+                
+                # 生成実行
                 response = model.generate_content(prompt)
                 
-                st.subheader("📖 生成された物語")
-                st.write(response.text)
+                # 安全にテキストを取り出すためのチェック
+                if response and response.text:
+                    st.subheader("📖 生成された物語")
+                    st.write(response.text)
+                else:
+                    st.error("申し訳ありません。AIがうまく物語を生成できませんでした。別のキーワードで試してみてください。")
                 
             except Exception as e:
-                st.error(f"エラーが発生しました: {e}")
+                st.error(f"物語の生成中にエラーが発生しました。別のテーマを試してみてください。")
 
-# フッター情報
+# --- フッター情報：じゅんさんの署名 ---
 st.divider()
 st.info("※このアプリはユーザーネーム「ジュンツカ」の提供（APIキー）で動作しています。")
